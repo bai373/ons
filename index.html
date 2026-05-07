@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --fg: #1a1a18;
+    --muted: #8a8880;
+    --accent: #1a1a18;
+    --line: rgba(26,26,24,0.12);
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--fg);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 0.5px solid var(--fg);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.18s ease-out, width 0.3s, height 0.3s, opacity 0.3s;
+    mix-blend-mode: difference;
+  }
+  .cursor.hover { width: 14px; height: 14px; }
+  .cursor-ring.hover { width: 56px; height: 56px; opacity: 0.5; }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 200px;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Page loader */
+  .loader {
+    position: fixed;
+    inset: 0;
+    background: var(--fg);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease, visibility 0.6s;
+  }
+  .loader.done { opacity: 0; visibility: hidden; }
+  .loader-text {
+    color: var(--bg);
+    font-family: var(--serif);
+    font-size: clamp(32px, 6vw, 64px);
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    overflow: hidden;
+  }
+  .loader-text span {
+    display: inline-block;
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: 0.1s;
+    transform: translateY(100%);
+  }
+
+  @keyframes slideUp {
+    to { transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes lineExpand {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  /* Nav */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 1.2s forwards;
+  }
+
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 300;
+    font-style: italic;
+    text-decoration: none;
+    color: var(--fg);
+    letter-spacing: 0.02em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0; right: 0;
+    height: 0.5px;
+    background: var(--fg);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .nav-links a:hover { color: var(--fg); }
+  .nav-links a:hover::after { transform: scaleX(1); }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 40px 60px;
+    position: relative;
+  }
+
+  .hero-counter {
+    position: absolute;
+    top: 50%; right: 40px;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    opacity: 0;
+    animation: fadeIn 1s ease 1.5s forwards;
+  }
+
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(52px, 9vw, 120px);
+    font-weight: 300;
+    line-height: 1.0;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+  }
+
+  .hero-title .line {
+    display: block;
+    transform: translateY(110%);
+    animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .hero-title .line:nth-child(1) { animation-delay: 0.9s; }
+  .hero-title .line:nth-child(2) { animation-delay: 1.0s; font-style: italic; }
+  .hero-title .line:nth-child(3) { animation-delay: 1.1s; }
+
+  .hero-meta {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 0.5px solid var(--line);
+    padding-top: 24px;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 1.4s forwards;
+  }
+
+  .hero-desc {
+    max-width: 320px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .hero-scroll {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .scroll-line {
+    width: 40px;
+    height: 0.5px;
+    background: var(--muted);
+    transform-origin: left;
+    animation: lineExpand 1s ease 1.8s both;
+  }
+
+  /* Section */
+  section {
+    padding: 120px 40px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 64px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .section-label::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 0.5px;
+    background: var(--muted);
+  }
+
+  /* Works grid */
+  .works-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 0;
+    row-gap: 80px;
+  }
+
+  .work-item {
+    cursor: none;
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .work-item.visible { opacity: 1; transform: translateY(0); }
+
+  .work-item:nth-child(1) { grid-column: 1 / 9; }
+  .work-item:nth-child(2) { grid-column: 7 / 13; margin-top: 120px; }
+  .work-item:nth-child(3) { grid-column: 2 / 8; }
+  .work-item:nth-child(4) { grid-column: 8 / 13; margin-top: 80px; }
+  .work-item:nth-child(5) { grid-column: 1 / 7; }
+  .work-item:nth-child(6) { grid-column: 6 / 13; margin-top: 60px; }
+
+  .work-image {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--line);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .work-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e8e6e0 0%, #d4d2cc 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .work-item:hover .work-image-placeholder { transform: scale(1.03); }
+
+  .work-image-placeholder img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .work-item:hover .work-image-placeholder img { transform: scale(1.04); }
+
+  .img-label {
+    font-family: var(--serif);
+    font-size: clamp(20px, 3vw, 36px);
+    font-weight: 300;
+    font-style: italic;
+    color: rgba(26,26,24,0.3);
+    user-select: none;
+    letter-spacing: 0.02em;
+  }
+
+  .work-info {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .work-title {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+
+  .work-meta {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .work-tag {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+  }
+
+  /* About */
+  #about {
+    border-top: 0.5px solid var(--line);
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+
+  .about-title {
+    font-family: var(--serif);
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .about-title em {
+    font-style: italic;
+    display: block;
+  }
+
+  .about-body {
+    color: var(--muted);
+    line-height: 2.0;
+    margin-bottom: 40px;
+  }
+
+  .about-services {
+    border-top: 0.5px solid var(--line);
+    padding-top: 24px;
+  }
+
+  .service-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 0.5px solid var(--line);
+    font-size: 12px;
+    transition: color 0.3s;
+  }
+  .service-row:hover { color: var(--muted); }
+  .service-num { color: var(--muted); font-size: 11px; }
+
+  /* Contact */
+  #contact {
+    border-top: 0.5px solid var(--line);
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .contact-title {
+    font-family: var(--serif);
+    font-size: clamp(48px, 8vw, 100px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.0;
+    margin-bottom: 40px;
+  }
+
+  .contact-links {
+    display: flex;
+    gap: 40px;
+  }
+
+  .contact-link {
+    text-decoration: none;
+    color: var(--fg);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    position: relative;
+    padding-bottom: 4px;
+  }
+  .contact-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 0.5px;
+    background: var(--fg);
+    transform-origin: right;
+    transform: scaleX(1);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .contact-link:hover::after { transform-origin: left; transform: scaleX(0); }
+
+  /* Footer */
+  footer {
+    padding: 24px 40px;
+    border-top: 0.5px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    nav { padding: 20px 24px; }
+    .hero { padding: 0 24px 48px; }
+    section { padding: 80px 24px; }
+    .works-grid { grid-template-columns: 1fr; row-gap: 48px; }
+    .work-item:nth-child(n) { grid-column: 1 / -1; margin-top: 0; }
+    .about-grid { grid-template-columns: 1fr; gap: 48px; }
+    footer { padding: 20px 24px; flex-direction: column; gap: 8px; }
+    .hero-counter { display: none; }
+    .contact-links { flex-direction: column; gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="loader-text"><span id="loader-name">Studio</span></div>
+</div>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav>
+  <a href="#" class="nav-logo">Luo fusheng</a>
+<ul class="nav-links">
+  <li><a href="#works">作品</a></li>
+  <li><a href="#about">关于</a></li>
+  <li><a href="#contact">联系</a></li>
+</ul>
+</nav>
+
+<section class="hero">
+  <div class="hero-counter">Selected Works — 2024</div>
+  <h1 class="hero-title">
+    <span class="line">Design</span>
+    <span class="line">& Vision</span>
+    <span class="line">Portfolio</span>
+  </h1>
+  <div class="hero-meta">
+    <p class="hero-desc">
+      独立设计师，专注于视觉设计、品牌识别与数字体验。
+      以克制的美学语言，构建有力量的视觉叙事。
+    </p>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      Scroll
+    </div>
+  </div>
+</section>
+
+<section id="works">
+  <div class="section-label">Selected Works</div>
+  <div class="works-grid">
+
+    <div class="work-item">
+      <div class="work-image">
+        <div class="work-image-placeholder">
+          <!-- 替换为: <img src="images/project1.jpg" alt="项目名称"> -->
+          <span class="img-label">Project 01</span>
+        </div>
+      </div>
+      <div class="work-info">
+        <h2 class="work-title">品牌视觉重塑</h2>
+        <span class="work-meta">2024</span>
+      </div>
+      <p class="work-tag">Brand Identity · Print</p>
+    </div>
+
+    <div class="work-item">
+      <div class="work-image">
+        <div class="work-image-placeholder">
+          <span class="img-label">Project 02</span>
+        </div>
+      </div>
+      <div class="work-info">
+        <h2 class="work-title">数字产品设计</h2>
+        <span class="work-meta">2024</span>
+      </div>
+      <p class="work-tag">UI/UX · Digital</p>
+    </div>
+
+    <div class="work-item">
+      <div class="work-image">
+        <div class="work-image-placeholder">
+          <span class="img-label">Project 03</span>
+        </div>
+      </div>
+      <div class="work-info">
+        <h2 class="work-title">展览视觉系统</h2>
+        <span class="work-meta">2023</span>
+      </div>
+      <p class="work-tag">Exhibition · Visual</p>
+    </div>
+
+    <div class="work-item">
+      <div class="work-image">
+        <div class="work-image-placeholder">
+          <span class="img-label">Project 04</span>
+        </div>
+      </div>
+      <div class="work-info">
+        <h2 class="work-title">包装设计</h2>
+        <span class="work-meta">2023</span>
+      </div>
+      <p class="work-tag">Packaging · Art Direction</p>
+    </div>
+
+    <div class="work-item">
+      <div class="work-image">
+        <div class="work-image-placeholder">
+          <span class="img-label">Project 05</span>
+        </div>
+      </div>
+      <div class="work-info">
+        <h2 class="work-title">字体设计实验</h2>
+        <span class="work-meta">2023</span>
+      </div>
+      <p class="work-tag">Typography · Editorial</p>
+    </div>
+
+    <div class="work-item">
+      <div class="work-image">
+        <div class="work-image-placeholder">
+          <span class="img-label">Project 06</span>
+        </div>
+      </div>
+      <div class="work-info">
+        <h2 class="work-title">空间导视系统</h2>
+        <span class="work-meta">2022</span>
+      </div>
+      <p class="work-tag">Wayfinding · Environmental</p>
+    </div>
+
+  </div>
+</section>
+
+<section id="about">
+  <div class="section-label">About</div>
+  <div class="about-grid">
+    <div>
+      <h2 class="about-title">
+        Thoughtful
+        <em>design</em>
+        matters.
+      </h2>
+    </div>
+    <div>
+      <p class="about-body">
+        我相信好的设计是克制的——在必要的地方说话，在其余的地方沉默。
+        每个项目都是一次对话，我在其中寻找那个独特的视觉频率。
+      </p>
+      <p class="about-body">
+        目前位于广州
+      </p>
+      <div class="about-services">
+        <div class="service-row"><span>品牌识别</span><span class="service-num">01</span></div>
+        <div class="service-row"><span>视觉传达</span><span class="service-num">02</span></div>
+        <div class="service-row"><span>UI / UX 设计</span><span class="service-num">03</span></div>
+        <div class="service-row"><span>艺术指导</span><span class="service-num">04</span></div>
+        <div class="service-row"><span>印刷与出版</span><span class="service-num">05</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <p class="contact-title">Let's work<br>together.</p>
+  <div class="contact-links">
+    <a class="contact-link" href="mailto:hello@example.com">电子邮箱ou3431284564@outlook.com</a>
+    <a class="contact-link" href="https://instagram.com" target="_blank">电话号码15796921226</a>
+    <a class="contact-link" href="https://behance.net" target="_blank">Behance</a>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 Luo fusheng. </span>
+  <span>Design · 广州</span>
+</footer>
+
+<script>
+  // Loader
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('done');
+    }, 1400);
+  });
+
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  function animateRing() {
+    rx += (mx - rx) * 0.14;
+    ry += (my - ry) * 0.14;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, .work-item, .service-row').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.classList.add('hover');
+      ring.classList.add('hover');
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.classList.remove('hover');
+      ring.classList.remove('hover');
+    });
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        const delay = entry.target.dataset.delay || 0;
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.work-item').forEach((el, i) => {
+    el.dataset.delay = i * 100;
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
